@@ -29,16 +29,34 @@ Specifies the path to search for log files.
 
 PS> Backup-Logfile -logPath logs -archivePath archive
 
+Move logfiles from subdirectory logs to subdirectory 
+(adding the default timestamp to the filename)
 
-.EXAMPLE<
+.EXAMPLE
 
-PS> Backup-Logfile -logPath .\logtest\ -archivePath .\arkiv\ -WhatIf
+PS> Backup-Logfile -logPath .\logtest\ -archivePath .\archive -WhatIf
+
+Show what would happen if we would move log files from .\logtest til .\archive
+
+
+.EXAMPLE
+
+PS> Backup-Logfile .\log2\myfile.log -archivePath .\archive\
+
+Move a single log file to an archive directory (adding the default timestamp to the filename)
+
+
+.EXAMPLE
+
+Backup-Logfile C:\Logs\ -archivePath C:\Backup\ -dateFormat "yyyy-MM-dd_HHmmss"
+
+Move log files from C:\Logs to C:\Backup using a custom dateformat (adding seconds to the file name)
 
 #>
 function Backup-Logfile {
     [CmdletBinding(SupportsShouldProcess)]
     param (
-        [Parameter(Mandatory=$True)]
+        [Parameter(Mandatory=$True, ValueFromPipeLine=$True)]
         [string] $logPath,
         
         [Parameter(Mandatory=$True)]
@@ -53,7 +71,7 @@ function Backup-Logfile {
                         
     )
 
-# Check that the given logpath is a valid and existing directory
+# Check that the given logpath is valid 
 if (-not (Test-Path $logPath))  {
     $errMessage = "{0} not found (invalid logPath)!" -f $logPath;
     throw $errMessage;
@@ -97,18 +115,18 @@ $filesToCopy = Get-ChildItem -Path $logPath -filter $filter
 # Check if there is anything to move
 if ($null -eq $filesToCopy) {
     $errMessage = "No logfiles found! ($logpath / $logExtension)";
-    throw $errMessage;
+    Write-Warning $errMessage | Out-Default;
 }
 
 foreach ($file in $filesToCopy) {
     $newname = "{0}_{1}{2}" -f $file.BaseName, $datestamp, $file.Extension
     $newpath = Join-Path -Path $archivePath -ChildPath $newname
-   	Move-Item $file.fullname $newpath -WhatIf:$WhatIfPreference
+   	Move-Item $file.fullname $newpath -WhatIf:$WhatIfPreference -Verbose
 }
 
 # Print info
 # TODO: Write text to powershell log
-Write-Output  ("Moved {0} {3} file(s) from {4} to {1} using the datestamp {2}" -f $filesToCopy.count, $archivePathResolved, $datestamp, $logExtension, $logPathResolved);
+Write-Output  ("Moved {0} {3} file(s) from {4} to {1} using the datestamp {2}" -f $filesToCopy.count, $archivePathResolved, $datestamp, $logExtension, $logPathResolved) | Out-Default;
 }
 
 
@@ -129,7 +147,7 @@ The function may be used to delete old logfiles based on the
 last modified date (lastwritetime)
 
 
-.PARAMETER path
+.PARAMETER logPath
 Specifies the path to search for log files.
 
 .PARAMETER numberofDaystoKeepFiles
@@ -144,21 +162,40 @@ Deletes log files recursively
 
 .EXAMPLE
 
-PS> Remove-Logfile -path logs
+PS> Remove-Logfile -logPath logs
+
+Delete logfiles from the subdirectory logs using the default values for 
+file type (.log) and retention (30 days).
+
+.EXAMPLE
+
+PS> Remove-Logfile -logPath C:\Logs -numberofDaystoKeepFiles 10
+
+Delete logfiles last modified more than 10 days ago from the directory C:\Logs
 
 
 .EXAMPLE
 
-PS> Remove-Logfile -path logs -numberofDaystoKeepFiles 10  -WhatIf
+PS> Remove-Logfile -logPath logs -numberofDaystoKeepFiles 10  -WhatIf
+
+Do a test run of the previous example.
+
+
+.EXAMPLE 
+
+PS> Remove-Logfile -logPath C:\Logs\ -logExtension .txt -numberofDaystoKeepFiles 7
+
+Delete .txt files older than 7 days from the directory C:\Logs\.
+
 
 #>
 
 Function Remove-Logfile {
 	[CmdletBinding(SupportsShouldProcess)]
 	param (
-		[Parameter(Mandatory=$True)]
+		[Parameter(Mandatory=$True, ValueFromPipeLine=$True)]
 		[string]
-		$path,
+		$logPath,
 
 		[Parameter(Mandatory=$False)]
 		[int]
@@ -173,7 +210,7 @@ Function Remove-Logfile {
 	)
 	
 
-# Purge Logfiles in $path
+# Purge Logfiles in $logPath
 # Delete all files older than the defined threshold value
 
 $thresholdDate = (get-date).AddDays(-1 * $numberofDaystoKeepFiles)
@@ -182,12 +219,12 @@ $minThreshold = 2
 # Validate input: 
 
 # Path has to be valid
-if (-not (Test-Path $path))
+if (-not (Test-Path $logPath))
 {
-	throw "$path not found"
+	throw "$logPath not found"
 }
 
-# Do not allow deleting files y
+# Do not allow deleting files modified less than the minimum threshold number of days ago
 if ($numberofDaystoKeepFiles -lt $minThreshold) 
 {
 	$errMessage = ("Invalid threshold. Parameter numberofDaystoKeepFiles ({0}) is less than the allowed mininum threshold ({1})" -f $numberofDaystoKeepFiles, $minThreshold);
@@ -200,7 +237,7 @@ if ($numberofDaystoKeepFiles -lt $minThreshold)
 $filter = ("*{0}" -f $logExtension);
 $filesToDelete = Get-ChildItem -Path $logPath -filter $filter -Recurse:$recurse |  Where LastWriteTime -lt $thresholdDate;
 
-$pathInfo = (Resolve-Path $path).Path
+$pathInfo = (Resolve-Path $logPath).Path
 
 if ($recurse){
 	$pathInfo += " (with recurse)";

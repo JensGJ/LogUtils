@@ -7,6 +7,14 @@
     <RootNamespace>MyApplication</RootNamespace>
     <AssemblyName>MyApplication</AssemblyName>
     <Name>LogUtils</Name>
+    <DebugArguments>
+    </DebugArguments>
+    <ManifestPath>$(OutDir)\$(ProjectName).psd1</ManifestPath>
+    <Author>Jens Gyldenkærne Jensen</Author>
+    <CompanyName>Copenhagen Business School</CompanyName>
+    <Copyright>CBS IT 2022</Copyright>
+    <Guid>6ed173ee-43a8-4a61-a598-423bf1e98645</Guid>
+    <ProcessorArchitecture />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -29,7 +37,6 @@
   <ItemGroup>
     <Compile Include="LogUtils.psd1" />
     <Compile Include="LogUtils.psm1" />
-    <Compile Include="LogUtils.tests.ps1" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Target Name="Build" />
