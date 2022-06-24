@@ -15,6 +15,7 @@
     <Copyright>CBS IT 2022</Copyright>
     <Guid>6ed173ee-43a8-4a61-a598-423bf1e98645</Guid>
     <ProcessorArchitecture />
+    <StartupFile>(Currently Open Script)</StartupFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
